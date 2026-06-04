@@ -9,7 +9,7 @@ if (!isset($_SESSION['user'])) {
 
 $job_id = $_GET['job_id'];
 
-if ($_POST) {
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     $email = $_SESSION['user'];
 
@@ -17,19 +17,28 @@ if ($_POST) {
     $user_data = $user->fetch_assoc();
 
     $user_id = $user_data['id'];
-    
-   $sql = "INSERT INTO applications(user_id, job_id, cv)
-        VALUES('$user_id', '$job_id', '$cv_name')";
 
-    if ($conn->query($sql)) {
-        echo "Application submitted successfully!";
+    // ✅ FIRST handle file upload
+    $cv_name = time() . "_" . $_FILES['cv']['name'];
+    $tmp_name = $_FILES['cv']['tmp_name'];
+
+    $upload_path = "uploads/" . $cv_name;
+
+    if (move_uploaded_file($tmp_name, $upload_path)) {
+
+        // ✅ THEN insert into database
+        $sql = "INSERT INTO applications (user_id, job_id, cv)
+                VALUES ('$user_id', '$job_id', '$cv_name')";
+
+        if ($conn->query($sql)) {
+            echo "Application submitted successfully!";
+        } else {
+            echo "Database Error: " . $conn->error;
+        }
+
     } else {
-        echo "Error: " . $conn->error;
+        echo "File upload failed!";
     }
-     $cv_name = $_FILES['cv']['name'];
-     $tmp_name = $_FILES['cv']['tmp_name'];
-
-     move_uploaded_file($tmp_name, "uploads/" . $cv_name);
 }
 ?>
 
